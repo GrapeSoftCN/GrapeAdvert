@@ -59,7 +59,7 @@ public class AdsenseModel {
 		for (Object object2 : fileInfo.keySet()) {
 			ads.eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
-		return ads.select();
+		return ads.limit(30).select();
 	}
 
 	@SuppressWarnings("unchecked")

@@ -55,7 +55,7 @@ public class AdvertModel {
 		for (Object object2 : fileInfo.keySet()) {
 			ad.eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
-		return ad.select();
+		return ad.limit(30).select();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -88,7 +88,7 @@ public class AdvertModel {
 	}
 
 	public JSONArray FindBytype(int tid) {
-		return ad.eq("adtype", tid).select();
+		return ad.eq("adtype", tid).limit(20).select();
 	}
 
 	// 设置广告位（广告id，广告位id）
