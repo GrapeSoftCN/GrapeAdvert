@@ -34,32 +34,32 @@ public class Adsense {
 	}
 
 	// 删除广告位
-	public String DeleteMessage(String mid) {
+	public String DeleteADS(String mid) {
 		return ads.resultMessage(ads.deleteMessage(mid), "删除广告位成功");
 	}
 
 	// 批量删除广告位
-	public String DeleteBatchMessage(String mids) {
+	public String DeleteBatchADS(String mids) {
 		return ads.resultMessage(ads.deleteMessage(mids.split(",")), "批量删除广告位成功");
 	}
 
 	// 广告位搜索
 	@SuppressWarnings("unchecked")
-	public String SearchMessage(String msgInfo) {
+	public String SearchADS(String msgInfo) {
 		_obj.put("records", ads.find(JSONHelper.string2json(msgInfo)));
 		return ads.resultMessage(0, _obj.toString());
 	}
 
 	// 分页
 	@SuppressWarnings("unchecked")
-	public String PageMessage(int idx, int pageSize) {
+	public String PageADS(int idx, int pageSize) {
 		_obj.put("records", ads.page(idx, pageSize));
 		return ads.resultMessage(0, _obj.toString());
 	}
 
 	// 条件分页
 	@SuppressWarnings("unchecked")
-	public String PageByMessage(int idx, int pageSize, String adsInfo) {
+	public String PageByADS(int idx, int pageSize, String adsInfo) {
 		_obj.put("records", ads.page(idx, pageSize, JSONHelper.string2json(adsInfo)));
 		return ads.resultMessage(0, _obj.toString());
 	}
