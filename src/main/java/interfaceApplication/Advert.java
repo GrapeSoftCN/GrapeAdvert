@@ -18,16 +18,27 @@ public class Advert {
 	private AdvertModel ads = new AdvertModel();
 	private HashMap<String, Object> map = new HashMap<>();
 	private JSONObject _obj = new JSONObject();
-
+//	private static privilige privilige;
+//
+//	static{
+//		privilige = new privilige("");  //userid
+//	}
 	public Advert() {
-		map.put("adid", ads.getID());
 		map.put("addesp", "");
 		map.put("adtype", 0);
+		map.put("adsid", 0);   //所属广告位
 		map.put("adcreatetime", TimeHelper.nowSecond()+"");
+		map.put("rPlv", 1000);
+		map.put("uPlv", 2000);
+		map.put("dPlv", 3000);
 	}
 
 	@SuppressWarnings("unchecked")
 	public String AddAD(String adsInfo) {
+//		String code = execRequest._run("GrapeAuth/Auth/InsertPLV", null).toString();
+//		if (!"0".equals(code)) {
+//			return rolesModel.resultMessage(3, "");
+//		}
 		JSONObject object = ads.AddMap(map, JSONHelper.string2json(adsInfo));
 		_obj.put("records", JSONHelper.string2json(ads.add(object)));
 		return ads.resultMessage(0, _obj.toString());
@@ -35,12 +46,20 @@ public class Advert {
 
 	// 修改广告
 	public String UpdateAD(String mid, String msgInfo) {
+//		int uplv = Integer.parseInt(ads.FindByID(mid).get("uPlv").toString());
+//		if (userPlv<uplv) {
+//			return model.resultMessage(5, "");
+//		}
 		return ads.resultMessage(ads.updateMessage(mid, JSONHelper.string2json(msgInfo)),
 				"留言修改成功");
 	}
 
 	// 删除广告
 	public String DeleteAD(String mid) {
+//		int dplv = Integer.parseInt(ads.FindByID(mid).get("dPlv").toString());
+//		if (userPlv<uplv) {
+//			return model.resultMessage(5, "");
+//		}
 		return ads.resultMessage(ads.deleteMessage(mid), "删除留言成功");
 	}
 

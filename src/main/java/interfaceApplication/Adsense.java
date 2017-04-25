@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import org.json.simple.JSONObject;
 
+import authority.privilige;
 import esayhelper.JSONHelper;
 import model.AdsenseModel;
 
@@ -11,17 +12,27 @@ public class Adsense {
 	private AdsenseModel ads = new AdsenseModel();
 	private HashMap<String, Object> map = new HashMap<>();
 	private JSONObject _obj = new JSONObject();
-
+//	private static privilige privilige;
+//
+//	static{
+//		privilige = new privilige("");  //userid
+//	}
 	public Adsense() {
-//		map.put("adsid", ads.getID());
 		map.put("adsdesp", "");
 		map.put("adswidth", "100");
 		map.put("adsheight", "100");
 		map.put("iseffect", 0); // 广告位是否生效，默认为0，不生效
+		map.put("rPlv", 1000);
+		map.put("uPlv", 2000);
+		map.put("dPlv", 3000);
 	}
 
 	@SuppressWarnings("unchecked")
 	public String AddADS(String adsInfo) {
+//		String code = execRequest._run("GrapeAuth/Auth/InsertPLV", null).toString();
+//		if (!"0".equals(code)) {
+//			return rolesModel.resultMessage(3, "");
+//		}
 		JSONObject object = ads.AddMap(map, JSONHelper.string2json(adsInfo));
 		_obj.put("records", JSONHelper.string2json(ads.add(object)));
 		return ads.resultMessage(0, _obj.toString());
@@ -29,12 +40,20 @@ public class Adsense {
 
 	// 修改广告位
 	public String UpdateADS(String mid, String msgInfo) {
+//		int uplv = Integer.parseInt(ads.FindByID(mid).get("uPlv").toString());
+//		if (userPlv<uplv) {
+//			return model.resultMessage(5, "");
+//		}
 		return ads.resultMessage(ads.updateMessage(mid, JSONHelper.string2json(msgInfo)),
 				"广告位修改成功");
 	}
 
 	// 删除广告位
 	public String DeleteADS(String mid) {
+//		int dplv = Integer.parseInt(ads.FindByID(mid).get("dPlv").toString());
+//		if (userPlv<uplv) {
+//			return model.resultMessage(5, "");
+//		}
 		return ads.resultMessage(ads.deleteMessage(mid), "删除广告位成功");
 	}
 
