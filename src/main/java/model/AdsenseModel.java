@@ -48,11 +48,11 @@ public class AdsenseModel {
 	}
 
 	public int deleteMessage(String[] mids) {
-		ads = (DBHelper) ads.or();
+		ads.or();
 		for (int i = 0; i < mids.length; i++) {
 			ads.eq("_id", new ObjectId(mids[i]));
 		}
-		return ads.delete() != null ? 0 : 99;
+		return ads.deleteAll() != 0 ? 0 : 99;
 	}
 
 	public JSONArray find(JSONObject fileInfo) {

@@ -39,16 +39,17 @@ public class AdvertModel {
 		return ad.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0 : 99;
 	}
 
-	public int deleteMessage(String mid) {
+	public int delete(String mid) {
 		return ad.eq("_id", new ObjectId(mid)).delete() != null ? 0 : 99;
 	}
 
-	public int deleteMessage(String[] mids) {
-		ad = (DBHelper) ad.or();
-		for (int i = 0; i < mids.length; i++) {
+	public int delete(String[] mids) {
+		ad.or();
+		int len = mids.length;
+		for (int i = 0; i < len; i++) {
 			ad.eq("_id", new ObjectId(mids[i]));
 		}
-		return ad.delete() != null ? 0 : 99;
+		return ad.deleteAll() == len ? 0 : 99;
 	}
 
 	public JSONArray find(JSONObject fileInfo) {

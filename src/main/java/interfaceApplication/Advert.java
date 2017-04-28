@@ -60,12 +60,12 @@ public class Advert {
 //		if (userPlv<uplv) {
 //			return model.resultMessage(5, "");
 //		}
-		return ads.resultMessage(ads.deleteMessage(mid), "删除留言成功");
+		return ads.resultMessage(ads.delete(mid), "删除留言成功");
 	}
 
 	// 批量删除广告
 	public String DeleteBatchAD(String mids) {
-		return ads.resultMessage(ads.deleteMessage(mids.split(",")), "批量删除留言成功");
+		return ads.resultMessage(ads.delete(mids.split(",")), "批量删除留言成功");
 	}
 
 	// 广告搜索
