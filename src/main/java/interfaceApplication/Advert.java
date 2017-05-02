@@ -2,7 +2,6 @@ package interfaceApplication;
 
 import java.util.HashMap;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.simple.JSONObject;
 
 import esayhelper.JSONHelper;
@@ -27,6 +26,7 @@ public class Advert {
 		map.put("addesp", "");
 		map.put("adtype", 0);
 		map.put("adsid", 0);   //所属广告位
+		map.put("img", "");   
 		map.put("adcreatetime", TimeHelper.nowSecond()+"");
 		map.put("rPlv", 1000);
 		map.put("uPlv", 2000);
@@ -41,7 +41,7 @@ public class Advert {
 //		}
 		JSONObject object = ads.AddMap(map, JSONHelper.string2json(adsInfo));
 		_obj.put("records", JSONHelper.string2json(ads.add(object)));
-		return ads.resultMessage(0, _obj.toString());
+		return ads.resultMessage(_obj);
 	}
 
 	// 修改广告
@@ -72,9 +72,14 @@ public class Advert {
 	@SuppressWarnings("unchecked")
 	public String SearchAD(String msgInfo) {
 		_obj.put("records", ads.find(JSONHelper.string2json(msgInfo)));
-		return ads.resultMessage(0, _obj.toString());
+		return ads.resultMessage(_obj);
 	}
-
+	//根据广告位id查询广告
+	@SuppressWarnings("unchecked")
+	public String SearchByid(String adsid,int no){
+		_obj.put("records", ads.search(adsid, no));
+		return ads.resultMessage(_obj);
+	}
 	// 分页
 	@SuppressWarnings("unchecked")
 	public String PageAD(int idx, int pageSize) {

@@ -21,6 +21,7 @@ public class Adsense {
 		map.put("adsdesp", "");
 		map.put("adswidth", "100");
 		map.put("adsheight", "100");
+		map.put("adstype", 1);
 		map.put("iseffect", 0); // 广告位是否生效，默认为0，不生效
 		map.put("rPlv", 1000);
 		map.put("uPlv", 2000);
@@ -40,20 +41,12 @@ public class Adsense {
 
 	// 修改广告位
 	public String UpdateADS(String mid, String msgInfo) {
-//		int uplv = Integer.parseInt(ads.FindByID(mid).get("uPlv").toString());
-//		if (userPlv<uplv) {
-//			return model.resultMessage(5, "");
-//		}
 		return ads.resultMessage(ads.updateMessage(mid, JSONHelper.string2json(msgInfo)),
 				"广告位修改成功");
 	}
 
 	// 删除广告位
 	public String DeleteADS(String mid) {
-//		int dplv = Integer.parseInt(ads.FindByID(mid).get("dPlv").toString());
-//		if (userPlv<uplv) {
-//			return model.resultMessage(5, "");
-//		}
 		return ads.resultMessage(ads.deleteMessage(mid), "删除广告位成功");
 	}
 
@@ -87,4 +80,5 @@ public class Adsense {
 	public String SetEffect(String adsid, int num) {
 		return ads.resultMessage(ads.seteffect(adsid, num), "广告位状态设置成功");
 	}
+	
 }

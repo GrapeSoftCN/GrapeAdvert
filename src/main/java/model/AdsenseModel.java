@@ -52,7 +52,7 @@ public class AdsenseModel {
 		for (int i = 0; i < mids.length; i++) {
 			ads.eq("_id", new ObjectId(mids[i]));
 		}
-		return ads.deleteAll() != 0 ? 0 : 99;
+		return ads.deleteAll() == mids.length ? 0 : 99;
 	}
 
 	public JSONArray find(JSONObject fileInfo) {

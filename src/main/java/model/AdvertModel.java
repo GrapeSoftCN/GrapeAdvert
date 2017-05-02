@@ -14,6 +14,7 @@ import esayhelper.DBHelper;
 import esayhelper.formHelper;
 import esayhelper.jGrapeFW_Message;
 import esayhelper.formHelper.formdef;
+import rpc.execRequest;
 
 public class AdvertModel {
 	private static DBHelper ad;
@@ -56,7 +57,7 @@ public class AdvertModel {
 		for (Object object2 : fileInfo.keySet()) {
 			ad.eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
-		return ad.limit(30).select();
+		return geturl(ad.limit(30).select());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -66,7 +67,7 @@ public class AdvertModel {
 		object.put("totalSize", (int) Math.ceil((double) ad.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
-		object.put("data", array);
+		object.put("data", geturl(array));
 		return object;
 	}
 
@@ -80,16 +81,24 @@ public class AdvertModel {
 		object.put("totalSize", (int) Math.ceil((double) ad.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
-		object.put("data", array);
+		object.put("data", geturl(array));
 		return object;
 	}
 
+	@SuppressWarnings("unchecked")
 	public JSONObject FindByID(String asid) {
-		return ad.eq("_id", new ObjectId(asid)).find();
+		JSONObject object = ad.eq("_id", new ObjectId(asid)).find();
+		String imgurl = execRequest._run("GrapeFile/Files/geturl/s:" + object.get("img").toString(), null).toString();
+		object.put("img", imgurl);
+		return object;
+	}
+	public JSONArray search(String asid,int no) {
+		JSONArray array = ad.eq("idsid", asid).limit(no).select();
+		return array;
 	}
 
 	public JSONArray FindBytype(int tid) {
-		return ad.eq("adtype", tid).limit(20).select();
+		return geturl(ad.eq("adtype", tid).limit(20).select());
 	}
 
 	// 设置广告位（广告id，广告位id）
@@ -98,6 +107,20 @@ public class AdvertModel {
 		JSONObject object = new JSONObject();
 		object.put("adsid", adsid);
 		return ad.eq("_id", new ObjectId(adid)).data(object).update() != null ? 0 : 99;
+	}
+
+	// 根据img中的文件id，获取图片地址
+	@SuppressWarnings("unchecked")
+	public JSONArray geturl(JSONArray array) {
+		JSONArray array2 = new JSONArray();
+		for (int i = 0, len = array.size(); i < len; i++) {
+			JSONObject object = (JSONObject) array.get(i);
+			String imgurl = execRequest._run("GrapeFile/Files/geturl/s:" + object.get("img").toString(), null)
+					.toString();
+			object.put("img", imgurl);
+			array2.add(object);
+		}
+		return array2;
 	}
 
 	public String getID() {
@@ -125,6 +148,11 @@ public class AdvertModel {
 		}
 		return object;
 	}
+
+	public String resultMessage(JSONObject object) {
+		return resultMessage(0, object.toString());
+	}
+
 
 	public String resultMessage(int num, String message) {
 		String msg = "";
