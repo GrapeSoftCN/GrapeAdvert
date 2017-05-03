@@ -3,7 +3,6 @@ package model;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Map.Entry;
 
 import org.bson.types.ObjectId;
@@ -14,11 +13,11 @@ import esayhelper.DBHelper;
 import esayhelper.formHelper;
 import esayhelper.jGrapeFW_Message;
 import esayhelper.formHelper.formdef;
-import rpc.execRequest;
 
 public class AdvertModel {
 	private static DBHelper ad;
 	private static formHelper _form;
+	private JSONObject _obj = new JSONObject();
 	static {
 		ad = new DBHelper("mongodb", "advert");
 		_form = ad.getChecker();
@@ -28,7 +27,13 @@ public class AdvertModel {
 		_form.putRule("adname", formdef.notNull);
 	}
 
+	@SuppressWarnings("unchecked")
 	public String add(JSONObject object) {
+		String adsid = object.get("adsid").toString();
+		object.put("imgURL", object.get("imgURL").toString().split("webapps")[1]);
+		if (search(adsid) != null) {
+			return resultMessage(2, "");
+		}
 		if (!_form.checkRuleEx(object)) {
 			return resultMessage(1, ""); // 必填字段没有填
 		}
@@ -36,7 +41,7 @@ public class AdvertModel {
 		return FindByID(info).toString();
 	}
 
-	public int updateMessage(String mid, JSONObject object) {
+	public int update(String mid, JSONObject object) {
 		return ad.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0 : 99;
 	}
 
@@ -55,9 +60,13 @@ public class AdvertModel {
 
 	public JSONArray find(JSONObject fileInfo) {
 		for (Object object2 : fileInfo.keySet()) {
-			ad.eq(object2.toString(), fileInfo.get(object2.toString()));
+			if (object2.toString().equals("_id")) {
+				ad.eq("_id", fileInfo.get("_id").toString());
+			} else {
+				ad.eq(object2.toString(), fileInfo.get(object2.toString()));
+			}
 		}
-		return geturl(ad.limit(30).select());
+		return getImg(ad.limit(30).select());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -67,7 +76,7 @@ public class AdvertModel {
 		object.put("totalSize", (int) Math.ceil((double) ad.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
-		object.put("data", geturl(array));
+		object.put("data", getImg(array));
 		return object;
 	}
 
@@ -81,24 +90,44 @@ public class AdvertModel {
 		object.put("totalSize", (int) Math.ceil((double) ad.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
-		object.put("data", geturl(array));
+		object.put("data", getImg(array));
 		return object;
 	}
 
-	@SuppressWarnings("unchecked")
 	public JSONObject FindByID(String asid) {
 		JSONObject object = ad.eq("_id", new ObjectId(asid)).find();
-		String imgurl = execRequest._run("GrapeFile/Files/geturl/s:" + object.get("img").toString(), null).toString();
-		object.put("img", imgurl);
-		return object;
+		return getImg(object);
 	}
-	public JSONArray search(String asid,int no) {
-		JSONArray array = ad.eq("idsid", asid).limit(no).select();
-		return array;
+
+	// 根据广告位id查询广告
+	public JSONObject search(String asid) {
+		JSONObject object = ad.eq("adsid", asid).find();
+		if (object == null) {
+			return object;
+		}
+		JSONObject obj = getADS(object);
+		return getImg(obj);
+	}
+
+	// 获取不同类型的广告数据
+	private JSONObject getADS(JSONObject object) {
+		int type = Integer.parseInt(object.get("adtype").toString());
+		if (type == 1) {
+			object.remove("text");
+			object.remove("size");
+			object.remove("attribute");
+			object.remove("show");
+		}
+		if (type == 2) {
+			object.remove("imgURL");
+			object.remove("show");
+		}
+		return object;
 	}
 
 	public JSONArray FindBytype(int tid) {
-		return geturl(ad.eq("adtype", tid).limit(20).select());
+		JSONArray array = ad.eq("adtype", tid).limit(20).select();
+		return getImg(array);
 	}
 
 	// 设置广告位（广告id，广告位id）
@@ -109,23 +138,27 @@ public class AdvertModel {
 		return ad.eq("_id", new ObjectId(adid)).data(object).update() != null ? 0 : 99;
 	}
 
-	// 根据img中的文件id，获取图片地址
+	// 获取图片广告内容
 	@SuppressWarnings("unchecked")
-	public JSONArray geturl(JSONArray array) {
+	private JSONObject getImg(JSONObject object) {
+		String imgURL = object.get("imgURL").toString();
+		imgURL = "http://123.57.214.226:8080" + imgURL;
+		object.put("imgURL", imgURL);
+		return object;
+	}
+
+	@SuppressWarnings("unchecked")
+	private JSONArray getImg(JSONArray array) {
 		JSONArray array2 = new JSONArray();
 		for (int i = 0, len = array.size(); i < len; i++) {
 			JSONObject object = (JSONObject) array.get(i);
-			String imgurl = execRequest._run("GrapeFile/Files/geturl/s:" + object.get("img").toString(), null)
-					.toString();
-			object.put("img", imgurl);
+			String imgURL = object.get("imgURL").toString();
+			imgURL = "http://123.57.214.226:8080" + imgURL;
+			object.put("imgURL", imgURL);
 			array2.add(object);
 		}
-		return array2;
-	}
 
-	public String getID() {
-		String str = UUID.randomUUID().toString();
-		return str.replace("-", "");
+		return array2;
 	}
 
 	/**
@@ -149,10 +182,17 @@ public class AdvertModel {
 		return object;
 	}
 
+	@SuppressWarnings("unchecked")
 	public String resultMessage(JSONObject object) {
-		return resultMessage(0, object.toString());
+		_obj.put("records", object);
+		return resultMessage(0, _obj.toString());
 	}
 
+	@SuppressWarnings("unchecked")
+	public String resultMessage(JSONArray array) {
+		_obj.put("records", array);
+		return resultMessage(0, _obj.toString());
+	}
 
 	public String resultMessage(int num, String message) {
 		String msg = "";
@@ -162,6 +202,9 @@ public class AdvertModel {
 			break;
 		case 1:
 			msg = "必填项没有填";
+			break;
+		case 2:
+			msg = "该广告位已存在广告";
 			break;
 		default:
 			msg = "其它异常";

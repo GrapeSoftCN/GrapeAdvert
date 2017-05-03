@@ -3,7 +3,6 @@ package model;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Map.Entry;
 
 import org.bson.types.ObjectId;
@@ -11,17 +10,20 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import esayhelper.DBHelper;
-/**
- * 广告位
- *
- */
+
 import esayhelper.formHelper;
 import esayhelper.jGrapeFW_Message;
 import esayhelper.formHelper.formdef;
-
+/**
+ * 广告位
+ * 
+ *
+ */
 public class AdsenseModel {
 	private static DBHelper ads;
 	private static formHelper form;
+	private JSONObject _obj = new JSONObject();
+	
 	static {
 		ads = new DBHelper("mongodb", "adsense");
 		form = ads.getChecker();
@@ -39,15 +41,15 @@ public class AdsenseModel {
 		return FindByID(info).toString();
 	}
 
-	public int updateMessage(String mid, JSONObject object) {
+	public int update(String mid, JSONObject object) {
 		return ads.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0 : 99;
 	}
 
-	public int deleteMessage(String mid) {
+	public int delete(String mid) {
 		return ads.eq("_id", new ObjectId(mid)).delete() != null ? 0 : 99;
 	}
 
-	public int deleteMessage(String[] mids) {
+	public int delete(String[] mids) {
 		ads.or();
 		for (int i = 0; i < mids.length; i++) {
 			ads.eq("_id", new ObjectId(mids[i]));
@@ -57,7 +59,11 @@ public class AdsenseModel {
 
 	public JSONArray find(JSONObject fileInfo) {
 		for (Object object2 : fileInfo.keySet()) {
-			ads.eq(object2.toString(), fileInfo.get(object2.toString()));
+			if (object2.toString().equals("_id")) {
+				ads.eq("", new ObjectId(fileInfo.get("_id").toString()));
+			}else{
+				ads.eq(object2.toString(), fileInfo.get(object2.toString()));
+			}
 		}
 		return ads.limit(30).select();
 	}
@@ -90,6 +96,7 @@ public class AdsenseModel {
 		return object;
 	}
 
+	
 	public JSONObject FindByID(String asid) {
 		return ads.eq("_id", new ObjectId(asid)).find();
 	}
@@ -99,11 +106,6 @@ public class AdsenseModel {
 		JSONObject object = new JSONObject();
 		object.put("iseffect", effect);
 		return ads.eq("adsid", new ObjectId(adsid)).data(object).update() != null ? 0 : 99;
-	}
-
-	public String getID() {
-		String str = UUID.randomUUID().toString();
-		return str.replace("-", "");
 	}
 
 	/**
@@ -127,6 +129,16 @@ public class AdsenseModel {
 		return object;
 	}
 
+	@SuppressWarnings("unchecked")
+	public String resultMessage(JSONArray array) {
+		_obj.put("records", array);
+		return resultMessage(0, _obj.toString());
+	}
+	@SuppressWarnings("unchecked")
+	public String resultMessage(JSONObject object) {
+		_obj.put("records", object);
+		return resultMessage(0, _obj.toString());
+	}
 	public String resultMessage(int num, String message) {
 		String msg = "";
 		switch (num) {
