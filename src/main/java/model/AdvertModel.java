@@ -30,7 +30,11 @@ public class AdvertModel {
 	@SuppressWarnings("unchecked")
 	public String add(JSONObject object) {
 		String adsid = object.get("adsid").toString();
-		object.put("imgURL", object.get("imgURL").toString().split("webapps")[1]);
+		String img = object.get("imgURL").toString();
+		if (img.contains("webapps")) {
+			img = img.split("webapps")[1];
+			object.put("imgURL", img);
+		}
 		if (search(adsid) != null) {
 			return resultMessage(2, "");
 		}
@@ -41,8 +45,17 @@ public class AdvertModel {
 		return FindByID(info).toString();
 	}
 
+	@SuppressWarnings("unchecked")
 	public int update(String mid, JSONObject object) {
-		return ad.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0 : 99;
+		if (object.containsKey("imgURL")) {
+			String img = object.get("imgURL").toString();
+			if (img.contains("webapps")) {
+				img = img.split("webapps")[1];
+				object.put("imgURL", img);
+			}
+		}
+		return ad.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0
+				: 99;
 	}
 
 	public int delete(String mid) {
@@ -73,7 +86,8 @@ public class AdvertModel {
 	public JSONObject page(int idx, int pageSize) {
 		JSONArray array = ad.page(idx, pageSize);
 		JSONObject object = new JSONObject();
-		object.put("totalSize", (int) Math.ceil((double) ad.count() / pageSize));
+		object.put("totalSize",
+				(int) Math.ceil((double) ad.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
 		object.put("data", getImg(array));
@@ -87,7 +101,8 @@ public class AdvertModel {
 		}
 		JSONArray array = ad.page(idx, pageSize);
 		JSONObject object = new JSONObject();
-		object.put("totalSize", (int) Math.ceil((double) ad.count() / pageSize));
+		object.put("totalSize",
+				(int) Math.ceil((double) ad.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
 		object.put("data", getImg(array));
@@ -135,15 +150,18 @@ public class AdvertModel {
 	public int setads(String adid, String adsid) {
 		JSONObject object = new JSONObject();
 		object.put("adsid", adsid);
-		return ad.eq("_id", new ObjectId(adid)).data(object).update() != null ? 0 : 99;
+		return ad.eq("_id", new ObjectId(adid)).data(object).update() != null
+				? 0 : 99;
 	}
 
 	// 获取图片广告内容
 	@SuppressWarnings("unchecked")
 	private JSONObject getImg(JSONObject object) {
 		String imgURL = object.get("imgURL").toString();
-		imgURL = "http://123.57.214.226:8080" + imgURL;
-		object.put("imgURL", imgURL);
+		if (imgURL.contains("File")) {
+			imgURL = "http://123.57.214.226:8080" + imgURL;
+			object.put("imgURL", imgURL);
+		}
 		return object;
 	}
 
@@ -171,9 +189,11 @@ public class AdvertModel {
 	@SuppressWarnings("unchecked")
 	public JSONObject AddMap(HashMap<String, Object> map, JSONObject object) {
 		if (map.entrySet() != null) {
-			Iterator<Entry<String, Object>> iterator = map.entrySet().iterator();
+			Iterator<Entry<String, Object>> iterator = map.entrySet()
+					.iterator();
 			while (iterator.hasNext()) {
-				Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator.next();
+				Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator
+						.next();
 				if (!object.containsKey(entry.getKey())) {
 					object.put(entry.getKey(), entry.getValue());
 				}
