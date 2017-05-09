@@ -6,7 +6,6 @@ import org.json.simple.JSONObject;
 
 import esayhelper.JSONHelper;
 import model.AdvertModel;
-import rpc.execRequest;
 
 /**
  * 广告管理
