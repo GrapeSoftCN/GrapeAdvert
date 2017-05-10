@@ -9,6 +9,7 @@ import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import apps.appsProxy;
 import esayhelper.DBHelper;
 import esayhelper.formHelper;
 import esayhelper.jGrapeFW_Message;
@@ -19,6 +20,8 @@ public class AdvertModel {
 	private static formHelper _form;
 	private JSONObject _obj = new JSONObject();
 	static {
+//		ad = new DBHelper(appsProxy.configValue().get("db").toString(),
+//				"advert");
 		ad = new DBHelper("mongodb", "advert");
 		_form = ad.getChecker();
 	}
@@ -29,11 +32,11 @@ public class AdvertModel {
 
 	public String add(JSONObject object) {
 		String adsid = object.get("adsid").toString();
-//		String img = object.get("imgURL").toString();
-//		if (img.contains("webapps")) {
-//			img = img.split("webapps")[1];
-//			object.put("imgURL", img);
-//		}
+		// String img = object.get("imgURL").toString();
+		// if (img.contains("webapps")) {
+		// img = img.split("webapps")[1];
+		// object.put("imgURL", img);
+		// }
 		if (search(adsid) != null) {
 			return resultMessage(2, "");
 		}
@@ -110,16 +113,17 @@ public class AdvertModel {
 		return getImg(object);
 	}
 
-	private DBHelper getInfo(JSONObject fileInfo){
+	private DBHelper getInfo(JSONObject fileInfo) {
 		for (Object object2 : fileInfo.keySet()) {
 			if (fileInfo.containsKey("_id")) {
 				ad.eq("_id", new ObjectId(fileInfo.get("_id").toString()));
-			}else{
+			} else {
 				ad.eq(object2.toString(), fileInfo.get(object2.toString()));
 			}
 		}
 		return ad;
 	}
+
 	// 根据广告位id查询广告
 	public JSONObject search(String asid) {
 		JSONObject object = ad.eq("adsid", asid).find();
@@ -176,38 +180,39 @@ public class AdvertModel {
 		JSONArray array2 = new JSONArray();
 		for (int i = 0, len = array.size(); i < len; i++) {
 			JSONObject object = (JSONObject) array.get(i);
-//			String imgURL = object.get("imgURL").toString();
-//			imgURL = "http://123.57.214.226:8080" + imgURL;
-//			object.put("imgURL", imgURL);
+			// String imgURL = object.get("imgURL").toString();
+			// imgURL = "http://123.57.214.226:8080" + imgURL;
+			// object.put("imgURL", imgURL);
 			object = getIMG(object);
 			array2.add(object);
-			
+
 		}
 
 		return array2;
 	}
 
 	@SuppressWarnings("unchecked")
-	private JSONObject getIMG(JSONObject object){
+	private JSONObject getIMG(JSONObject object) {
 		String imgURL;
 		for (int i = 0; i < 5; i++) {
-			if (i==0) {
+			if (i == 0) {
 				if (object.containsKey("imgURL")) {
 					imgURL = object.get("imgURL").toString();
 					imgURL = "http://123.57.214.226:8080" + imgURL;
 					object.put("imgURL", imgURL);
 				}
-			}else{
-				if (!object.containsKey("imgURL"+i)) {
+			} else {
+				if (!object.containsKey("imgURL" + i)) {
 					continue;
 				}
-				imgURL = object.get("imgURL"+i).toString();
+				imgURL = object.get("imgURL" + i).toString();
 				imgURL = "http://123.57.214.226:8080" + imgURL;
-				object.put("imgURL"+i, imgURL);
+				object.put("imgURL" + i, imgURL);
 			}
 		}
 		return object;
 	}
+
 	/**
 	 * 将map添加至JSONObject中
 	 * 

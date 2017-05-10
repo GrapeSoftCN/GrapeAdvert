@@ -9,11 +9,13 @@ import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import apps.appsProxy;
 import esayhelper.DBHelper;
 
 import esayhelper.formHelper;
 import esayhelper.jGrapeFW_Message;
 import esayhelper.formHelper.formdef;
+
 /**
  * 广告位
  * 
@@ -23,8 +25,10 @@ public class AdsenseModel {
 	private static DBHelper ads;
 	private static formHelper form;
 	private JSONObject _obj = new JSONObject();
-	
+
 	static {
+		// ads = new DBHelper(appsProxy.configValue().get("db").toString(),
+		// "adsense");
 		ads = new DBHelper("mongodb", "adsense");
 		form = ads.getChecker();
 	}
@@ -42,7 +46,8 @@ public class AdsenseModel {
 	}
 
 	public int update(String mid, JSONObject object) {
-		return ads.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0 : 99;
+		return ads.eq("_id", new ObjectId(mid)).data(object).update() != null
+				? 0 : 99;
 	}
 
 	public int delete(String mid) {
@@ -61,7 +66,7 @@ public class AdsenseModel {
 		for (Object object2 : fileInfo.keySet()) {
 			if (object2.toString().equals("_id")) {
 				ads.eq("", new ObjectId(fileInfo.get("_id").toString()));
-			}else{
+			} else {
 				ads.eq(object2.toString(), fileInfo.get(object2.toString()));
 			}
 		}
@@ -72,7 +77,8 @@ public class AdsenseModel {
 	public JSONObject page(int idx, int pageSize) {
 		JSONArray array = ads.page(idx, pageSize);
 		JSONObject object = new JSONObject();
-		object.put("totalSize", (int) Math.ceil((double) ads.count() / pageSize));
+		object.put("totalSize",
+				(int) Math.ceil((double) ads.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
 		object.put("data", array);
@@ -89,14 +95,14 @@ public class AdsenseModel {
 		}
 		JSONArray array = ads.page(idx, pageSize);
 		JSONObject object = new JSONObject();
-		object.put("totalSize", (int) Math.ceil((double) ads.count() / pageSize));
+		object.put("totalSize",
+				(int) Math.ceil((double) ads.count() / pageSize));
 		object.put("currentPage", idx);
 		object.put("pageSize", pageSize);
 		object.put("data", array);
 		return object;
 	}
 
-	
 	public JSONObject FindByID(String asid) {
 		return ads.eq("_id", new ObjectId(asid)).find();
 	}
@@ -105,7 +111,8 @@ public class AdsenseModel {
 	public int seteffect(String adsid, int effect) {
 		JSONObject object = new JSONObject();
 		object.put("iseffect", effect);
-		return ads.eq("adsid", new ObjectId(adsid)).data(object).update() != null ? 0 : 99;
+		return ads.eq("adsid", new ObjectId(adsid)).data(object)
+				.update() != null ? 0 : 99;
 	}
 
 	/**
@@ -118,9 +125,11 @@ public class AdsenseModel {
 	@SuppressWarnings("unchecked")
 	public JSONObject AddMap(HashMap<String, Object> map, JSONObject object) {
 		if (map.entrySet() != null) {
-			Iterator<Entry<String, Object>> iterator = map.entrySet().iterator();
+			Iterator<Entry<String, Object>> iterator = map.entrySet()
+					.iterator();
 			while (iterator.hasNext()) {
-				Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator.next();
+				Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator
+						.next();
 				if (!object.containsKey(entry.getKey())) {
 					object.put(entry.getKey(), entry.getValue());
 				}
@@ -134,11 +143,13 @@ public class AdsenseModel {
 		_obj.put("records", array);
 		return resultMessage(0, _obj.toString());
 	}
+
 	@SuppressWarnings("unchecked")
 	public String resultMessage(JSONObject object) {
 		_obj.put("records", object);
 		return resultMessage(0, _obj.toString());
 	}
+
 	public String resultMessage(int num, String message) {
 		String msg = "";
 		switch (num) {
