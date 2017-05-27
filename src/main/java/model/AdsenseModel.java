@@ -27,9 +27,9 @@ public class AdsenseModel {
 	private JSONObject _obj = new JSONObject();
 
 	static {
-		// ads = new DBHelper(appsProxy.configValue().get("db").toString(),
-		// "adsense");
-		ads = new DBHelper("mongodb", "adsense");
+		ads = new DBHelper(appsProxy.configValue().get("db").toString(),
+				"adsense");
+		// ads = new DBHelper("mongodb", "adsense");
 		form = ads.getChecker();
 	}
 

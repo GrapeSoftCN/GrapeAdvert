@@ -20,9 +20,9 @@ public class AdvertModel {
 	private static formHelper _form;
 	private JSONObject _obj = new JSONObject();
 	static {
-//		ad = new DBHelper(appsProxy.configValue().get("db").toString(),
-//				"advert");
-		ad = new DBHelper("mongodb", "advert");
+		ad = new DBHelper(appsProxy.configValue().get("db").toString(),
+				"advert");
+//		ad = new DBHelper("mongodb", "advert");
 		_form = ad.getChecker();
 	}
 
