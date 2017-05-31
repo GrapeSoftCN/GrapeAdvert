@@ -29,7 +29,6 @@ public class AdsenseModel {
 	static {
 		ads = new DBHelper(appsProxy.configValue().get("db").toString(),
 				"adsense");
-		// ads = new DBHelper("mongodb", "adsense");
 		form = ads.getChecker();
 	}
 
@@ -63,14 +62,18 @@ public class AdsenseModel {
 	}
 
 	public JSONArray find(JSONObject fileInfo) {
-		for (Object object2 : fileInfo.keySet()) {
-			if (object2.toString().equals("_id")) {
-				ads.eq("", new ObjectId(fileInfo.get("_id").toString()));
-			} else {
-				ads.eq(object2.toString(), fileInfo.get(object2.toString()));
+		JSONArray array = new JSONArray();
+		if (fileInfo!=null) {
+			for (Object object2 : fileInfo.keySet()) {
+				if (object2.toString().equals("_id")) {
+					ads.eq("_id", new ObjectId(fileInfo.get("_id").toString()));
+				} else {
+					ads.eq(object2.toString(), fileInfo.get(object2.toString()));
+				}
 			}
+			array = ads.limit(30).select();
 		}
-		return ads.limit(30).select();
+		return array;
 	}
 
 	@SuppressWarnings("unchecked")

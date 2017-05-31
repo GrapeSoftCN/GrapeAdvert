@@ -22,7 +22,6 @@ public class AdvertModel {
 	static {
 		ad = new DBHelper(appsProxy.configValue().get("db").toString(),
 				"advert");
-//		ad = new DBHelper("mongodb", "advert");
 		_form = ad.getChecker();
 	}
 
