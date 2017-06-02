@@ -1,8 +1,10 @@
 package model;
 
+import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Map.Entry;
 
 import org.bson.types.ObjectId;
@@ -10,18 +12,19 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import apps.appsProxy;
+import database.db;
 import esayhelper.DBHelper;
 import esayhelper.formHelper;
 import esayhelper.jGrapeFW_Message;
 import esayhelper.formHelper.formdef;
+import nlogger.nlogger;
 
 public class AdvertModel {
 	private static DBHelper ad;
 	private static formHelper _form;
 	private JSONObject _obj = new JSONObject();
 	static {
-		ad = new DBHelper(appsProxy.configValue().get("db").toString(),
-				"advert");
+		ad = new DBHelper(appsProxy.configValue().get("db").toString(), "advert");
 		_form = ad.getChecker();
 	}
 
@@ -29,146 +32,210 @@ public class AdvertModel {
 		_form.putRule("adname", formdef.notNull);
 	}
 
+	private db bind() {
+		return ad.bind(String.valueOf(appsProxy.appid()));
+	}
+
 	public String add(JSONObject object) {
-		String adsid = object.get("adsid").toString();
-		// String img = object.get("imgURL").toString();
-		// if (img.contains("webapps")) {
-		// img = img.split("webapps")[1];
-		// object.put("imgURL", img);
-		// }
-		if (search(adsid) != null) {
-			return resultMessage(2, "");
+		String info = "";
+		if (object != null) {
+			if (object.containsKey("adsid")) {
+				String adsid = object.get("adsid").toString();
+				if (search(adsid) != null) {
+					return resultMessage(2, "");
+				}
+			}
+			if (!_form.checkRuleEx(object)) {
+				return resultMessage(1, ""); // 必填字段没有填
+			}
+			info = bind().data(object).insertOnce().toString();
 		}
-		if (!_form.checkRuleEx(object)) {
-			return resultMessage(1, ""); // 必填字段没有填
+		if (("").equals(info)) {
+			return resultMessage(99);
 		}
-		String info = ad.data(object).insertOnce().toString();
-		return FindByID(info).toString();
+		JSONObject object2 = FindByID(info);
+		return resultMessage(object2);
 	}
 
 	@SuppressWarnings("unchecked")
-	public int update(String mid, JSONObject object) {
-		if (object.containsKey("imgURL")) {
-			String img = object.get("imgURL").toString();
-			if (img.contains("webapps")) {
-				img = img.split("webapps")[1];
-				object.put("imgURL", img);
+	public String update(String mid, JSONObject object) {
+		JSONObject obj = null;
+		if (object != null) {
+			try {
+				obj = new JSONObject();
+				if (object.containsKey("imgURL")) {
+					String img = getImageUri(object.get("imgURL").toString());
+					object.put("imgURL", img);
+				}
+				obj = bind().eq("_id", new ObjectId(mid)).data(object).update();
+			} catch (Exception e) {
+				obj = null;
 			}
 		}
-		return ad.eq("_id", new ObjectId(mid)).data(object).update() != null ? 0
-				: 99;
+		return obj != null ? resultMessage(0, "广告修改成功") : resultMessage(99);
 	}
 
-	public int delete(String mid) {
-		return ad.eq("_id", new ObjectId(mid)).delete() != null ? 0 : 99;
+	public String delete(String mid) {
+		if (mid.contains(",")) {
+			return resultMessage(99);
+		}
+		JSONObject object = bind().eq("_id", new ObjectId(mid)).delete();
+		return object != null ? resultMessage(0, "删除成功") : resultMessage(99);
 	}
 
-	public int delete(String[] mids) {
-		ad.or();
+	public String delete(String[] mids) {
+		bind().or();
 		int len = mids.length;
 		for (int i = 0; i < len; i++) {
-			ad.eq("_id", new ObjectId(mids[i]));
+			bind().eq("_id", new ObjectId(mids[i]));
 		}
-		return ad.deleteAll() == len ? 0 : 99;
+		return bind().deleteAll() == len ? resultMessage(0, "删除成功") : resultMessage(99);
 	}
 
-	public JSONArray find(JSONObject fileInfo) {
-		for (Object object2 : fileInfo.keySet()) {
-			if (object2.toString().equals("_id")) {
-				ad.eq("_id", fileInfo.get("_id").toString());
-			} else {
-				ad.eq(object2.toString(), fileInfo.get(object2.toString()));
+	public String find(JSONObject fileInfo) {
+		JSONArray array = null;
+		if (fileInfo != null) {
+			try {
+				array = new JSONArray();
+				for (Object object2 : fileInfo.keySet()) {
+					if (object2.toString().equals("_id")) {
+						bind().eq("_id", fileInfo.get("_id").toString());
+					} else {
+						bind().eq(object2.toString(), fileInfo.get(object2.toString()));
+					}
+				}
+				array = bind().limit(30).select();
+			} catch (Exception e) {
+				nlogger.logout(e);
+				array = null;
 			}
 		}
-		return getImg(ad.limit(30).select());
+		return resultMessage(getImg(array));
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject page(int idx, int pageSize) {
-		JSONArray array = ad.page(idx, pageSize);
-		JSONObject object = new JSONObject();
-		object.put("totalSize",
-				(int) Math.ceil((double) ad.count() / pageSize));
-		object.put("currentPage", idx);
-		object.put("pageSize", pageSize);
-		object.put("data", getImg(array));
-		return object;
+	public String page(int idx, int pageSize) {
+		JSONObject object = null;
+		try {
+			object = new JSONObject();
+			JSONArray array = bind().page(idx, pageSize);
+			if (array.size() != 0) {
+				object.put("totalSize", (int) Math.ceil((double) bind().count() / pageSize));
+				object.put("currentPage", idx);
+				object.put("pageSize", pageSize);
+				object.put("data", getImg(array));
+			}
+		} catch (Exception e) {
+			nlogger.logout(e);
+			object = null;
+		}
+		return resultMessage(object);
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject page(int idx, int pageSize, JSONObject fileInfo) {
-		JSONArray array = getInfo(fileInfo).page(idx, pageSize);
-		JSONObject object = new JSONObject();
-		object.put("totalSize",
-				(int) Math.ceil((double) getInfo(fileInfo).count() / pageSize));
-		object.put("currentPage", idx);
-		object.put("pageSize", pageSize);
-		object.put("data", getImg(array));
-		return object;
+	public String page(int idx, int pageSize, JSONObject fileInfo) {
+		JSONObject object = null;
+		if (fileInfo != null) {
+			try {
+				JSONArray array = getInfo(fileInfo).page(idx, pageSize);
+				object = new JSONObject();
+				if (array.size() != 0) {
+					object.put("totalSize", (int) Math.ceil((double) getInfo(fileInfo).count() / pageSize));
+					object.put("currentPage", idx);
+					object.put("pageSize", pageSize);
+					object.put("data", getImg(array));
+				}
+			} catch (Exception e) {
+				nlogger.logout(e);
+				object = null;
+			}
+		}
+		return resultMessage(object);
 	}
 
 	public JSONObject FindByID(String asid) {
-		JSONObject object = ad.eq("_id", new ObjectId(asid)).find();
-		return getImg(object);
+		JSONObject object = bind().eq("_id", new ObjectId(asid)).find();
+		return object != null ? getImg(object) : null;
 	}
 
 	private DBHelper getInfo(JSONObject fileInfo) {
 		for (Object object2 : fileInfo.keySet()) {
 			if (fileInfo.containsKey("_id")) {
-				ad.eq("_id", new ObjectId(fileInfo.get("_id").toString()));
+				bind().eq("_id", new ObjectId(fileInfo.get("_id").toString()));
 			} else {
-				ad.eq(object2.toString(), fileInfo.get(object2.toString()));
+				bind().eq(object2.toString(), fileInfo.get(object2.toString()));
 			}
 		}
 		return ad;
 	}
 
 	// 根据广告位id查询广告
-	public JSONObject search(String asid) {
-		JSONObject object = ad.eq("adsid", asid).find();
+	public String search(String asid) {
+		JSONObject object = bind().eq("adsid", asid).find();
 		if (object == null) {
-			return object;
+			return resultMessage(99);
 		}
 		JSONObject obj = getADS(object);
-		return getImg(obj);
+		return resultMessage(getImg(obj));
 	}
 
 	// 获取不同类型的广告数据
 	private JSONObject getADS(JSONObject object) {
-		int type = Integer.parseInt(object.get("adtype").toString());
-		if (type == 1) {
-			object.remove("text");
-			object.remove("size");
-			object.remove("attribute");
-			object.remove("show");
-		}
-		if (type == 2) {
-			object.remove("imgURL");
-			object.remove("show");
+		if (object != null) {
+			if (object.containsKey("adtype")) {
+				int type = Integer.parseInt(object.get("adtype").toString());
+				switch (type) {
+				case 1:
+					object.remove("text");
+					object.remove("size");
+					object.remove("attribute");
+					object.remove("show");
+					break;
+
+				case 2:
+					object.remove("imgURL");
+					object.remove("show");
+					break;
+				}
+			}
 		}
 		return object;
 	}
 
-	public JSONArray FindBytype(int tid) {
-		JSONArray array = ad.eq("adtype", tid).limit(20).select();
-		return getImg(array);
+	public String FindBytype(int tid) {
+		JSONArray array = null;
+		try {
+			array = new JSONArray();
+			array = bind().eq("adtype", tid).limit(20).select();
+		} catch (Exception e) {
+			nlogger.logout(e);
+			array = null;
+		}
+		return resultMessage(getImg(array));
 	}
 
 	// 设置广告位（广告id，广告位id）
 	@SuppressWarnings("unchecked")
-	public int setads(String adid, String adsid) {
+	public String setads(String adid, String adsid) {
 		JSONObject object = new JSONObject();
 		object.put("adsid", adsid);
-		return ad.eq("_id", new ObjectId(adid)).data(object).update() != null
-				? 0 : 99;
+		JSONObject object2 = bind().eq("_id", new ObjectId(adid)).data(object).update();
+		return object2 != null ? resultMessage(0, "设置广告位成功") : resultMessage(99);
 	}
 
 	// 获取图片广告内容
 	@SuppressWarnings("unchecked")
 	private JSONObject getImg(JSONObject object) {
-		String imgURL = object.get("imgURL").toString();
-		if (imgURL.contains("File")) {
-			imgURL = "http://123.57.214.226:8080" + imgURL;
+		if (object != null) {
+			String imgURL = "";
+			String host = "http://" + getAppIp("file").split("/")[1];
+			if (object.containsKey("imgURL")) {
+				imgURL = object.get("imgURL").toString();
+				if (imgURL.contains("webapps")) {
+					imgURL = imgURL.split("webapps")[1];
+				}
+				imgURL = host + imgURL;
+			}
 			object.put("imgURL", imgURL);
 		}
 		return object;
@@ -176,36 +243,36 @@ public class AdvertModel {
 
 	@SuppressWarnings("unchecked")
 	private JSONArray getImg(JSONArray array) {
+		if (array == null) {
+			return array;
+		}
 		JSONArray array2 = new JSONArray();
 		for (int i = 0, len = array.size(); i < len; i++) {
 			JSONObject object = (JSONObject) array.get(i);
-			// String imgURL = object.get("imgURL").toString();
-			// imgURL = "http://123.57.214.226:8080" + imgURL;
-			// object.put("imgURL", imgURL);
 			object = getIMG(object);
 			array2.add(object);
-
 		}
-
 		return array2;
 	}
 
 	@SuppressWarnings("unchecked")
 	private JSONObject getIMG(JSONObject object) {
+		if (object == null) {
+			return object;
+		}
 		String imgURL;
 		for (int i = 0; i < 5; i++) {
 			if (i == 0) {
 				if (object.containsKey("imgURL")) {
-					imgURL = object.get("imgURL").toString();
-					imgURL = "http://123.57.214.226:8080" + imgURL;
-					object.put("imgURL", imgURL);
+					String img = getImageUri(object.get("imgURL").toString());
+					object.put("imgURL", img);
 				}
 			} else {
 				if (!object.containsKey("imgURL" + i)) {
 					continue;
 				}
 				imgURL = object.get("imgURL" + i).toString();
-				imgURL = "http://123.57.214.226:8080" + imgURL;
+				imgURL = getAppIp("file").split("/")[1] + imgURL;
 				object.put("imgURL" + i, imgURL);
 			}
 		}
@@ -222,11 +289,9 @@ public class AdvertModel {
 	@SuppressWarnings("unchecked")
 	public JSONObject AddMap(HashMap<String, Object> map, JSONObject object) {
 		if (map.entrySet() != null) {
-			Iterator<Entry<String, Object>> iterator = map.entrySet()
-					.iterator();
+			Iterator<Entry<String, Object>> iterator = map.entrySet().iterator();
 			while (iterator.hasNext()) {
-				Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator
-						.next();
+				Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator.next();
 				if (!object.containsKey(entry.getKey())) {
 					object.put(entry.getKey(), entry.getValue());
 				}
@@ -235,19 +300,47 @@ public class AdvertModel {
 		return object;
 	}
 
+	private String getImageUri(String imageURL) {
+		String subString;
+		String rString = null;
+		int i = imageURL.toLowerCase().indexOf("http://");
+		if (i >= 0) {
+			subString = imageURL.substring(i + 7);
+			rString = subString.split("/")[0];
+		}
+		return rString;
+	}
+
+	private String getAppIp(String key) {
+		String value = "";
+		try {
+			Properties pro = new Properties();
+			pro.load(new FileInputStream("URLConfig.properties"));
+			value = pro.getProperty(key);
+		} catch (Exception e) {
+			value = "";
+		}
+		return value;
+	}
+
+
+	private String resultMessage(int num) {
+		return resultMessage(0, "");
+	}
+
 	@SuppressWarnings("unchecked")
-	public String resultMessage(JSONObject object) {
+	private String resultMessage(JSONObject object) {
 		_obj.put("records", object);
 		return resultMessage(0, _obj.toString());
 	}
 
 	@SuppressWarnings("unchecked")
-	public String resultMessage(JSONArray array) {
+	private String resultMessage(JSONArray array) {
 		_obj.put("records", array);
 		return resultMessage(0, _obj.toString());
 	}
 
-	public String resultMessage(int num, String message) {
+	private String resultMessage(int num, String message) {
 		String msg = "";
 		switch (num) {
 		case 0:
