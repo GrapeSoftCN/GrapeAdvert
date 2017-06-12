@@ -272,7 +272,7 @@ public class AdvertModel {
 					continue;
 				}
 				imgURL = object.get("imgURL" + i).toString();
-				imgURL = getAppIp("file").split("/")[1] + imgURL;
+				imgURL = "http://"+getAppIp("file").split("/")[1] + imgURL;
 				object.put("imgURL" + i, imgURL);
 			}
 		}
