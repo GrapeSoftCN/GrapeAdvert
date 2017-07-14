@@ -11,12 +11,12 @@ import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import JGrapeSystem.jGrapeFW_Message;
 import apps.appsProxy;
 import check.formHelper;
 import check.formHelper.formdef;
 import database.DBHelper;
 import database.db;
-import esayhelper.jGrapeFW_Message;
 import nlogger.nlogger;
 
 public class AdvertModel {
@@ -92,16 +92,16 @@ public class AdvertModel {
 		return bind().deleteAll() == len ? resultMessage(0, "删除成功") : resultMessage(99);
 	}
 
-	public String find(JSONObject fileInfo) {
+	public String find(JSONObject Info) {
 		JSONArray array = null;
-		if (fileInfo != null) {
+		if (Info != null) {
 			try {
 				array = new JSONArray();
-				for (Object object2 : fileInfo.keySet()) {
+				for (Object object2 : Info.keySet()) {
 					if (object2.toString().equals("_id")) {
-						bind().eq("_id", fileInfo.get("_id").toString());
+						bind().eq("_id", Info.get("_id").toString());
 					} else {
-						bind().eq(object2.toString(), fileInfo.get(object2.toString()));
+						bind().eq(object2.toString(), Info.get(object2.toString()));
 					}
 				}
 				array = bind().limit(30).select();
@@ -136,23 +136,25 @@ public class AdvertModel {
 	public String page(int idx, int pageSize, JSONObject Info) {
 		JSONObject object = null;
 		try {
+			db db = bind();
 			JSONArray array = new JSONArray();
 			object = new JSONObject();
 			if (Info != null) {
-				// db db = bind().and();
 				for (Object object2 : Info.keySet()) {
 					if (("_id").equals(object2.toString())) {
-						bind().eq("_id", new ObjectId(Info.get("_id").toString()));
+						db.eq("_id", new ObjectId(Info.get("_id").toString()));
 					} else {
-						bind().like(object2.toString(), Info.get(object2.toString()));
+						db.like(object2.toString(), Info.get(object2.toString()));
 					}
 				}
-				array = bind().dirty().page(idx, pageSize);
-				object.put("totalSize", (int) Math.ceil((double) bind().count() / pageSize));
+				array = db.dirty().page(idx, pageSize);
+				object.put("totalSize", (int) Math.ceil((double) db.count() / pageSize));
+				db.clear();
 				object.put("currentPage", idx);
 				object.put("pageSize", pageSize);
 				object.put("data", getImg(array));
 			}
+			db.clear();
 		} catch (Exception e) {
 			nlogger.logout(e);
 			object = null;
@@ -215,6 +217,7 @@ public class AdvertModel {
 	}
 
 	@SuppressWarnings("unchecked")
+
 	private JSONArray getImg(JSONArray array) {
 		if (array == null) {
 			return array;
@@ -300,7 +303,7 @@ public class AdvertModel {
 	}
 
 	private String getImageUri(String imageURL) {
-//		String rString = null;
+		// String rString = null;
 		if (imageURL.contains("http://")) {
 			int i = imageURL.toLowerCase().indexOf("/file/upload");
 			imageURL = imageURL.substring(i);

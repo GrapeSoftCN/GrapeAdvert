@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import org.json.simple.JSONObject;
 
-import esayhelper.JSONHelper;
+import json.JSONHelper;
 import model.AdvertModel;
 
 /**
@@ -17,9 +17,9 @@ public class Advert {
 	private HashMap<String, Object> map = new HashMap<>();
 
 	public Advert() {
-		map.put("rPlv", 1000);
-		map.put("uPlv", 2000);
-		map.put("dPlv", 3000);
+		map.put("r", 1000);
+		map.put("u", 2000);
+		map.put("d", 3000);
 	}
 
 	public String AddAD(String adsInfo) {

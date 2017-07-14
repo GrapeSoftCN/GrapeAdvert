@@ -4,9 +4,9 @@ import java.util.HashMap;
 
 import org.json.simple.JSONObject;
 
-import esayhelper.JSONHelper;
-import esayhelper.TimeHelper;
+import json.JSONHelper;
 import model.AdsenseModel;
+import time.TimeHelper;
 
 public class Adsense {
 	private AdsenseModel ads = new AdsenseModel();
@@ -18,9 +18,9 @@ public class Adsense {
 		map.put("adsheight", "100");
 		map.put("createtime", TimeHelper.nowMillis() + "");
 		map.put("iseffect", 0); // 广告位是否生效，默认为0，不生效
-		map.put("rPlv", 1000);
-		map.put("uPlv", 2000);
-		map.put("dPlv", 3000);
+		map.put("r", 1000);
+		map.put("u", 2000);
+		map.put("d", 3000);
 	}
 
 	// 新增广告位
