@@ -15,7 +15,6 @@ import check.formHelper;
 import check.formHelper.formdef;
 import database.DBHelper;
 import database.db;
-
 import nlogger.nlogger;
 
 /**
@@ -24,19 +23,16 @@ import nlogger.nlogger;
  *
  */
 public class AdsenseModel {
-	private static DBHelper ads;
-	private static formHelper form;
+	private DBHelper ads;
+	private formHelper form;
 	private JSONObject _obj = new JSONObject();
-
-	static {
-		ads = new DBHelper(appsProxy.configValue().get("db").toString(), "adsense");
-		form = ads.getChecker();
-	}
 
 	private db bind(){
 		return ads.bind(String.valueOf(appsProxy.appid()));
 	}
 	public AdsenseModel() {
+		ads = new DBHelper(appsProxy.configValue().get("db").toString(), "adsense");
+		form = ads.getChecker();
 		form.putRule("adsname", formdef.notNull);
 	}
 

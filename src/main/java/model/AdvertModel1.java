@@ -15,14 +15,11 @@ import database.db;
 import json.JSONHelper;
 
 public class AdvertModel1 {
-	private static DBHelper advert;
-	private static formHelper form;
-	
-	static{
+	private DBHelper advert;
+	private formHelper form;
+	public AdvertModel1() {
 		advert = new DBHelper(appsProxy.configValue().getString("db"),"advert");
 		form = advert.getChecker();
-	}
-	public AdvertModel1() {
 		form.putRule("adname", formdef.notNull);
 	}
 	public JSONObject check(String info,HashMap<String, Object> map) {

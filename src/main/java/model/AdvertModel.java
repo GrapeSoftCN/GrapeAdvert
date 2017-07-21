@@ -4,8 +4,8 @@ import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
@@ -20,15 +20,12 @@ import database.db;
 import nlogger.nlogger;
 
 public class AdvertModel {
-	private static DBHelper ad;
-	private static formHelper _form;
+	private DBHelper ad;
+	private formHelper _form;
 	private JSONObject _obj = new JSONObject();
-	static {
+	public AdvertModel() {
 		ad = new DBHelper(appsProxy.configValue().get("db").toString(), "advert");
 		_form = ad.getChecker();
-	}
-
-	public AdvertModel() {
 		_form.putRule("adname", formdef.notNull);
 	}
 
