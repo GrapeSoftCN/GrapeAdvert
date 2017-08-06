@@ -6,21 +6,32 @@ import org.json.simple.JSONObject;
 
 import json.JSONHelper;
 import model.AdsenseModel;
+import rpc.execRequest;
+import session.session;
 import time.TimeHelper;
 
 public class Adsense {
+	private session se;
 	private AdsenseModel ads = new AdsenseModel();
 	private HashMap<String, Object> map = new HashMap<>();
+	private JSONObject UserInfo = new JSONObject();
+	private String sid = null;
 
 	public Adsense() {
+		se = new session();
+		sid = (String) execRequest.getChannelValue("sid");
+		if (sid != null) {
+			UserInfo = se.getSession(sid);
+		}
 		map.put("adsdesp", "");
 		map.put("adswidth", "100");
 		map.put("adsheight", "100");
-		map.put("createtime", TimeHelper.nowMillis() + "");
+		map.put("createtime", TimeHelper.nowMillis());
 		map.put("iseffect", 0); // 广告位是否生效，默认为0，不生效
 		map.put("r", 1000);
 		map.put("u", 2000);
 		map.put("d", 3000);
+		map.put("wbid", (UserInfo != null && UserInfo.size() != 0) ? UserInfo.get("currentWeb").toString() : ""); // 所属网站
 	}
 
 	// 新增广告位
@@ -56,6 +67,15 @@ public class Adsense {
 
 	// 条件分页
 	public String PageByADS(int idx, int pageSize, String adsInfo) {
+		return ads.page(idx, pageSize, JSONHelper.string2json(adsInfo));
+	}
+
+	public String PageADSBack(int idx, int pageSize) {
+		return ads.page(idx, pageSize);
+	}
+
+	// 条件分页
+	public String PageByADSBack(int idx, int pageSize, String adsInfo) {
 		return ads.page(idx, pageSize, JSONHelper.string2json(adsInfo));
 	}
 

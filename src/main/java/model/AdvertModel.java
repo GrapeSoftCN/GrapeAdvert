@@ -13,24 +13,38 @@ import org.json.simple.JSONObject;
 
 import JGrapeSystem.jGrapeFW_Message;
 import apps.appsProxy;
+import authority.privilige;
 import check.formHelper;
 import check.formHelper.formdef;
 import database.DBHelper;
 import database.db;
 import nlogger.nlogger;
+import rpc.execRequest;
+import session.session;
+import string.StringHelper;
 
 public class AdvertModel {
+	private session se;
 	private DBHelper ad;
 	private formHelper _form;
 	private JSONObject _obj = new JSONObject();
+	private JSONObject UserInfo = new JSONObject();
+	private String sid = null;
+	private String appid = appsProxy.appidString();
+
 	public AdvertModel() {
 		ad = new DBHelper(appsProxy.configValue().get("db").toString(), "advert");
+		se = new session();
+		sid = (String) execRequest.getChannelValue("sid");
+		if (sid != null) {
+			UserInfo = se.getSession(sid);
+		}
 		_form = ad.getChecker();
 		_form.putRule("adname", formdef.notNull);
 	}
 
 	private db bind() {
-		return ad.bind(String.valueOf(appsProxy.appid()));
+		return ad.bind(appsProxy.appidString());
 	}
 
 	public String add(JSONObject object) {
@@ -64,8 +78,9 @@ public class AdvertModel {
 					String img = getImageUri(object.get("imgURL").toString());
 					object.put("imgURL", img);
 				}
-				obj = bind().eq("_id", new ObjectId(mid)).data(object).update();
+				obj = bind().eq("_id", new ObjectId(mid)).data(object.toString()).update();
 			} catch (Exception e) {
+				nlogger.logout(e);
 				obj = null;
 			}
 		}
@@ -138,24 +153,117 @@ public class AdvertModel {
 			object = new JSONObject();
 			if (Info != null) {
 				for (Object object2 : Info.keySet()) {
-					if (("_id").equals(object2.toString())) {
-						db.eq("_id", new ObjectId(Info.get("_id").toString()));
-					} else {
-						db.like(object2.toString(), Info.get(object2.toString()));
-					}
+					db.eq(object2.toString(), Info.get(object2.toString()));
 				}
 				array = db.dirty().page(idx, pageSize);
+				array = getImg(array);
 				object.put("totalSize", (int) Math.ceil((double) db.count() / pageSize));
 				db.clear();
 				object.put("currentPage", idx);
 				object.put("pageSize", pageSize);
-				object.put("data", getImg(array));
+				object.put("data", (array == null || array.size() ==0)?new JSONArray(): FillData(array));
 			}
 			db.clear();
 		} catch (Exception e) {
 			nlogger.logout(e);
 			object = null;
 		}
+		return resultMessage(object);
+	}
+
+	@SuppressWarnings("unchecked")
+	private JSONArray FillData(JSONArray array) {
+		String type, data;
+		long typeId;
+		int l = array.size();
+		JSONObject object;
+		JSONArray arrays;
+		if (l == 0) {
+			return array;
+		}
+		for (int i = 0; i < l; i++) {
+			object = (JSONObject) array.get(i);
+			type = object.getString("adtype");
+			if (type.contains("$numberLong")) {
+				type = JSONObject.toJSON(type).getString("$numberLong");
+			}
+			typeId = Long.parseLong(type);
+			if (typeId == 1) {
+				data = object.getString("data");
+				arrays = JSONArray.toJSONArray(data);
+				object.put("data", getArticle(arrays));
+			}
+			array.set(i, object);
+		}
+		return array;
+	}
+
+	@SuppressWarnings("unchecked")
+	private JSONArray getArticle(JSONArray array) {
+		JSONObject object,obj, tempObj = new JSONObject();
+		String id,image;
+		String oid = "";
+		if (array != null && array.size() != 0) {
+			int l = array.size();
+			for (int i = 0; i < l; i++) {
+				object = (JSONObject) array.get(i);
+				id = object.getString("id");
+				if (id != null && !id.equals("")) {
+					oid += id + ",";
+				}
+			}
+			if (oid.length() > 0) {
+				oid = StringHelper.fixString(oid, ',');
+			}
+			nlogger.logout(oid);
+			// 批量查询文章，mainName,_id,images
+			String articles = appsProxy.proxyCall("/GrapeContent/Content/findArticles/" + oid).toString();
+			obj = JSONObject.toJSON(articles);
+			if (obj != null && obj.size() != 0) {
+				for (int i = 0; i < l; i++) {
+					object = (JSONObject) array.get(i);
+					id = object.getString("id");
+					tempObj = (JSONObject) obj.get(id);
+					if (tempObj != null && tempObj.size() != 0) {
+						image = tempObj.getString("image");
+						object.put("text", tempObj.getString("mainName"));
+						object.put("img",(!image.equals(""))? image:tempObj.getString("thumbnail"));
+					}
+					array.set(i, object);
+				}
+			}
+		}
+		return array;
+	}
+
+	public String pages(int idx, int pageSize, String condString) {
+		JSONArray array = null;
+		long total = 0, totalSize = 0;
+		String wbid = (UserInfo != null && UserInfo.size() != 0) ? UserInfo.get("currentWeb").toString() : "";
+		int role = getRoleSign();
+		JSONArray condArray = JSONArray.toJSONArray(condString);
+		db db = bind();
+		if (condArray != null && condArray.size() != 0) {
+			db.where(condArray);
+			if (role == 2 || role == 3 || role == 7) {
+				db.eq("wbid", wbid);
+			}
+		}
+		array = db.dirty().page(idx, pageSize);
+		total = db.dirty().count();
+		totalSize = db.dirty().pageMax(pageSize);
+		db.clear();
+		return PageShow(array, idx, pageSize, total, totalSize);
+	}
+
+	@SuppressWarnings("unchecked")
+	private String PageShow(JSONArray array, int idx, int pageSize, long total, long totalSize) {
+		JSONObject object = new JSONObject();
+		object.put("data", (array == null) ? new JSONArray() : array);
+		object.put("currentPage", idx);
+		object.put("pageSize", pageSize);
+		object.put("total", total);
+		object.put("totalSize", totalSize);
 		return resultMessage(object);
 	}
 
@@ -276,6 +384,51 @@ public class AdvertModel {
 		return object;
 	}
 
+	/**
+	 * 根据角色plv，获取角色级别
+	 * 
+	 * @project GrapeSuggest
+	 * @package interfaceApplication
+	 * @file Suggest.java
+	 * 
+	 * @return
+	 *
+	 */
+	private int getRoleSign() {
+		int roleSign = 0; // 游客
+		if (sid != null) {
+			try {
+				privilige privil = new privilige(sid);
+				int roleplv = privil.getRolePV(appid);
+				if (roleplv >= 1000 && roleplv < 3000) {
+					roleSign = 1; // 普通用户即企业员工
+				}
+				if (roleplv >= 3000 && roleplv < 5000) {
+					roleSign = 2; // 栏目管理员
+				}
+				if (roleplv >= 5000 && roleplv < 8000) {
+					roleSign = 3; // 企业管理员
+				}
+				if (roleplv >= 8000 && roleplv < 10000) {
+					roleSign = 4; // 监督管理员
+				}
+				if (roleplv >= 10000 && roleplv < 12000) {
+					roleSign = 5; // 总管理员
+				}
+				if (roleplv >= 12000 && roleplv < 14000) {
+					roleSign = 6; // 总管理员，只读权限
+				}
+				if (roleplv >= 14000 && roleplv < 16000) {
+					roleSign = 7; // 栏目编辑人员
+				}
+			} catch (Exception e) {
+				nlogger.logout(e);
+				roleSign = 0;
+			}
+		}
+		return roleSign;
+	}
+
 	// 获取不同类型的广告数据
 	private JSONObject getADS(JSONObject object) {
 		if (object != null) {
@@ -301,9 +454,18 @@ public class AdvertModel {
 
 	private String getImageUri(String imageURL) {
 		// String rString = null;
-		if (imageURL.contains("http://")) {
-			int i = imageURL.toLowerCase().indexOf("/file/upload");
-			imageURL = imageURL.substring(i);
+		int i = 0;
+		if (imageURL.contains("File//upload")) {
+			i = imageURL.toLowerCase().indexOf("file//upload");
+			imageURL = "\\" + imageURL.substring(i);
+		}
+		if (imageURL.contains("File\\upload")) {
+			i = imageURL.toLowerCase().indexOf("file\\upload");
+			imageURL = "\\" + imageURL.substring(i);
+		}
+		if (imageURL.contains("File/upload")) {
+			i = imageURL.toLowerCase().indexOf("file/upload");
+			imageURL = "\\" + imageURL.substring(i);
 		}
 		return imageURL;
 	}

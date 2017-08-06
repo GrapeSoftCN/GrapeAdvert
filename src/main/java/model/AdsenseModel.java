@@ -11,11 +11,14 @@ import org.json.simple.JSONObject;
 
 import JGrapeSystem.jGrapeFW_Message;
 import apps.appsProxy;
+import authority.privilige;
 import check.formHelper;
 import check.formHelper.formdef;
 import database.DBHelper;
 import database.db;
 import nlogger.nlogger;
+import rpc.execRequest;
+import session.session;
 
 /**
  * 广告位
@@ -23,17 +26,27 @@ import nlogger.nlogger;
  *
  */
 public class AdsenseModel {
+	private session se;
 	private DBHelper ads;
 	private formHelper form;
 	private JSONObject _obj = new JSONObject();
+	private JSONObject UserInfo = new JSONObject();
+	private String sid = null;
+	private String appid = appsProxy.appidString();
 
-	private db bind(){
-		return ads.bind(String.valueOf(appsProxy.appid()));
-	}
 	public AdsenseModel() {
 		ads = new DBHelper(appsProxy.configValue().get("db").toString(), "adsense");
+		se = new session();
+		sid = (String) execRequest.getChannelValue("sid");
+		if (sid != null) {
+			UserInfo = se.getSession(sid);
+		}
 		form = ads.getChecker();
 		form.putRule("adsname", formdef.notNull);
+	}
+	
+	private db bind(){
+		return ads.bind(String.valueOf(appsProxy.appid()));
 	}
 
 	public String add(JSONObject object) {
@@ -142,6 +155,17 @@ public class AdsenseModel {
 		return resultMessage(object);
 	}
 
+	public void pages(String wbid,int idx,int pageSize,String condString) {
+		int role = getRoleSign();
+		JSONArray condArray = JSONArray.toJSONArray(condString);
+		db db = bind();
+		if (condArray!=null && condArray.size()!=0) {
+			db.where(condArray);
+			if (role == 2 || role == 3 || role == 7) {
+				
+			}
+		}
+	}
 	public JSONObject FindByID(String asid) {
 		JSONObject object = bind().eq("_id", new ObjectId(asid)).find();
 		return object != null ? object : null;
@@ -178,7 +202,50 @@ public class AdsenseModel {
 		}
 		return object;
 	}
-
+	/**
+	 * 根据角色plv，获取角色级别
+	 * 
+	 * @project GrapeSuggest
+	 * @package interfaceApplication
+	 * @file Suggest.java
+	 * 
+	 * @return
+	 *
+	 */
+	private int getRoleSign() {
+		int roleSign = 0; // 游客
+		if (sid != null) {
+			try {
+				privilige privil = new privilige(sid);
+				int roleplv = privil.getRolePV(appid);
+				if (roleplv >= 1000 && roleplv < 3000) {
+					roleSign = 1; // 普通用户即企业员工
+				}
+				if (roleplv >= 3000 && roleplv < 5000) {
+					roleSign = 2; // 栏目管理员
+				}
+				if (roleplv >= 5000 && roleplv < 8000) {
+					roleSign = 3; // 企业管理员
+				}
+				if (roleplv >= 8000 && roleplv < 10000) {
+					roleSign = 4; // 监督管理员
+				}
+				if (roleplv >= 10000 && roleplv < 12000) {
+					roleSign = 5; // 总管理员
+				}
+				if (roleplv >= 12000 && roleplv < 14000) {
+					roleSign = 6; // 总管理员，只读权限
+				}
+				if (roleplv >= 14000 && roleplv < 16000) {
+					roleSign = 7; // 栏目编辑人员
+				}
+			} catch (Exception e) {
+				nlogger.logout(e);
+				roleSign = 0;
+			}
+		}
+		return roleSign;
+	}
 	private String resultMessage(int num) {
 		return resultMessage(num, "");
 	}
