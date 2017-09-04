@@ -49,9 +49,12 @@ public class Advert {
 
 	// 修改广告
 	public String UpdateAD(String mid, String msgInfo) {
-		msgInfo = codec.DecodeHtmlTag(msgInfo);
-		msgInfo = codec.decodebase64(msgInfo);
-		return ads.update(mid, JSONHelper.string2json(msgInfo));
+		JSONObject object = JSONObject.toJSON(msgInfo);
+		if (object == null) {
+			msgInfo = codec.DecodeHtmlTag(msgInfo);
+			msgInfo = codec.decodebase64(msgInfo);
+		}
+		return ads.update(mid, object);
 	}
 
 	// 删除广告
@@ -76,7 +79,7 @@ public class Advert {
 
 	// 分页
 	public String PageAD(int idx, int pageSize) {
-		return ads.page(idx, pageSize,null);
+		return ads.page(idx, pageSize, null);
 	}
 
 	// 条件分页
@@ -84,7 +87,7 @@ public class Advert {
 		return ads.page(idx, pageSize, JSONHelper.string2json(adsInfo));
 	}
 
-	/**--------------后台广告查询 ----------**/
+	/** --------------后台广告查询 ---------- **/
 	public String PageADBack(int idx, int pageSize) {
 		return ads.pages(idx, pageSize, null);
 	}

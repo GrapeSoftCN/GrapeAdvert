@@ -50,12 +50,12 @@ public class AdvertModel {
 	public String add(JSONObject object) {
 		String info = "";
 		if (object != null) {
-			if (object.containsKey("adsid")) {
-				String adsid = object.get("adsid").toString();
-				if (search(adsid) != null) {
-					return resultMessage(2, "");
-				}
-			}
+//			if (object.containsKey("adsid")) {
+//				String adsid = object.get("adsid").toString();
+//				if (search(adsid) != null) {
+//					return resultMessage(2, "");
+//				}
+//			}
 			if (!_form.checkRuleEx(object)) {
 				return resultMessage(1, ""); // 必填字段没有填
 			}
@@ -161,7 +161,7 @@ public class AdvertModel {
 				db.clear();
 				object.put("currentPage", idx);
 				object.put("pageSize", pageSize);
-				object.put("data", (array == null || array.size() ==0)?new JSONArray(): FillData(array));
+				object.put("data", (array == null || array.size() == 0) ? new JSONArray() : FillData(array));
 			}
 			db.clear();
 		} catch (Exception e) {
@@ -200,8 +200,8 @@ public class AdvertModel {
 
 	@SuppressWarnings("unchecked")
 	private JSONArray getArticle(JSONArray array) {
-		JSONObject object,obj, tempObj = new JSONObject();
-		String id,image;
+		JSONObject object, obj, tempObj = new JSONObject();
+		String id, image;
 		String oid = "";
 		if (array != null && array.size() != 0) {
 			int l = array.size();
@@ -217,7 +217,7 @@ public class AdvertModel {
 			}
 			nlogger.logout(oid);
 			// 批量查询文章，mainName,_id,images
-			String articles = appsProxy.proxyCall("/GrapeContent/Content/findArticles/" + oid).toString();
+			String articles = appsProxy.proxyCall("/GrapeContent/Content/findArticles/" + oid, null, null).toString();
 			obj = JSONObject.toJSON(articles);
 			if (obj != null && obj.size() != 0) {
 				for (int i = 0; i < l; i++) {
@@ -227,7 +227,7 @@ public class AdvertModel {
 					if (tempObj != null && tempObj.size() != 0) {
 						image = tempObj.getString("image");
 						object.put("text", tempObj.getString("mainName"));
-						object.put("img",(!image.equals(""))? image:tempObj.getString("thumbnail"));
+						object.put("img", (!image.equals("")) ? image : tempObj.getString("thumbnail"));
 					}
 					array.set(i, object);
 				}
@@ -487,7 +487,7 @@ public class AdvertModel {
 	}
 
 	private String resultMessage(int num) {
-		return resultMessage(0, "");
+		return resultMessage(num, "");
 	}
 
 	@SuppressWarnings("unchecked")
